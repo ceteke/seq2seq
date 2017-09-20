@@ -28,7 +28,7 @@ class Decoder:
             self.decoder_output_layer = Dense(self.vocab_size, name='output_projection')
 
     def forward(self, encoder_states, encoder_sequence_lens, embedding, vocab_size):
-        batch_size = tf.shape(encoder_states)[0]
+        batch_size = tf.shape(encoder_states)[1]
 
         if self.mode == 'train':
             eos_step = tf.ones(shape=[batch_size, 1], dtype=tf.int32) * self.eos_token
