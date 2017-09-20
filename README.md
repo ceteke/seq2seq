@@ -34,3 +34,7 @@ loss = s2s.train(encoder_inputs, encoder_input_lens, decoder_inputs, decoder_inp
 - Different embedding matrices for encoder and decoder
 - Bidirectional encoder
 - Beam search
+
+#### References
+http://papers.nips.cc/paper/5346-sequence-to-sequence-learning-with-neural-networks.pdf
+https://www.tensorflow.org/tutorials/seq2seq#tensorflow_seq2seq_library
