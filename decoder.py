@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.python.layers.core import Dense
 
 class Decoder:
-    def __init__(self, hidden_units, num_layers, dropout, max_decode_len, vocab_size, mode='train', eos_token=0):
+    def __init__(self, hidden_units, num_layers, dropout, max_decode_len, vocab_size, mode='train', eos_token=1):
         self.hidden_units = hidden_units
         self.num_layers = num_layers
         self.dropout = dropout
