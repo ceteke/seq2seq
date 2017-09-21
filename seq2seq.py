@@ -78,11 +78,11 @@ class Seq2Seq:
         saver.restore(self.sess, save_path=path)
 
     def train(self, encoder_inputs, encoder_inputs_lens, decoder_inputs, decoder_inputs_lens):
-        outputs = self.sess.run([self.train_op, self.loss], feed_dict={self.encoder.encoder_inputs.name: encoder_inputs,
-                                                                       self.encoder.encoder_sequence_lens.name: encoder_inputs_lens,
-                                                                       self.decoder.decoder_inputs.name: decoder_inputs,
-                                                                       self.decoder.decoder_sequence_lens.name: decoder_inputs_lens})
-        return outputs[1]
+        outputs = self.sess.run([self.train_op, self.loss, self.global_step], feed_dict={self.encoder.encoder_inputs.name: encoder_inputs,
+                                                                                        self.encoder.encoder_sequence_lens.name: encoder_inputs_lens,
+                                                                                        self.decoder.decoder_inputs.name: decoder_inputs,
+                                                                                        self.decoder.decoder_sequence_lens.name: decoder_inputs_lens})
+        return outputs[1], outputs[2]
 
     def evaluate(self, encoder_inputs, encoder_inputs_lens, decoder_inputs, decoder_inputs_lens):
         return self.sess.run(self.loss, feed_dict={self.encoder.encoder_inputs.name: encoder_inputs,
