@@ -67,10 +67,13 @@ class Seq2Seq:
 
         return train_op
 
-    def save(self, path):
+    def save(self, path, ow=True):
         saver = tf.train.Saver()
+        if ow:
+            save_path = saver.save(self.sess, save_path=path)
+        else:
+            save_path = saver.save(self.sess, save_path=path, global_step=self.global_step)
 
-        save_path = saver.save(self.sess, save_path=path, global_step=self.global_step)
         print('model saved at {}'.format(save_path), flush=True)
 
     def restore(self, path):
