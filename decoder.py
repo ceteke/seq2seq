@@ -19,11 +19,15 @@ class Decoder:
                 self.decoder_sequence_lens = tf.placeholder(tf.int32, shape=(None,), name='sequence_lengths')
                 self.decoder_inputs = tf.placeholder(tf.int32, shape=(None, None), name='input_sequences')
 
-            self.cell = tf.nn.rnn_cell.LSTMCell(num_units=self.hidden_units)
-            if self.dropout is not None and self.mode=='train':
-                self.cell = tf.nn.rnn_cell.DropoutWrapper(self.cell, output_keep_prob=(1.0 - self.dropout))
+            cells = []
+            for _ in range(self.num_layers):
+                cell = tf.nn.rnn_cell.LSTMCell(num_units=self.hidden_units)
+                if self.dropout is not None and self.mode=='train':
+                    cell = tf.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob=1.0 - self.dropout)
+                cells.append(cell)
 
-            self.decoder_cell = tf.nn.rnn_cell.MultiRNNCell([self.cell] * self.num_layers)
+            self.decoder_multi_layer_cell = tf.nn.rnn_cell.MultiRNNCell(cells)
+
             self.decoder_output_layer = Dense(self.vocab_size, name='output_projection')
 
     def forward(self, encoder_states, encoder_sequence_lens, embedding, vocab_size):
@@ -44,7 +48,7 @@ class Decoder:
                                                                     sequence_length=decoder_sequence_lens_train,
                                                                     name='training_helper')
 
-                basic_train_decoder = tf.contrib.seq2seq.BasicDecoder(cell=self.decoder_cell,
+                basic_train_decoder = tf.contrib.seq2seq.BasicDecoder(cell=self.decoder_multi_layer_cell,
                                                                       helper=training_helper,
                                                                       initial_state=encoder_states,
                                                                       output_layer=self.decoder_output_layer)
@@ -73,7 +77,7 @@ class Decoder:
                                                                             start_tokens=start_step,
                                                                             end_token=self.eos_token)
 
-                inference_decoder = tf.contrib.seq2seq.BasicDecoder(cell=self.decoder_cell,
+                inference_decoder = tf.contrib.seq2seq.BasicDecoder(cell=self.decoder_multi_layer_cell,
                                                                     helper=inference_helper,
                                                                     initial_state=encoder_states,
                                                                     output_layer=self.decoder_output_layer)
