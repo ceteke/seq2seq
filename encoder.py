@@ -17,11 +17,14 @@ class Encoder:
             self.encoder_inputs = tf.placeholder(tf.int32, shape=(None, None), name='input_sequences')
             self.encoder_sequence_lens = tf.placeholder(tf.int32, shape=(None,), name='sequence_lengths')
 
-            cell = tf.nn.rnn_cell.LSTMCell(num_units=self.hidden_units)
-            self.encoder_multi_layer_cell = tf.nn.rnn_cell.MultiRNNCell([cell] * self.num_layers)
-            if self.dropout is not None:
-                self.encoder_multi_layer_cell = tf.nn.rnn_cell.DropoutWrapper(self.encoder_multi_layer_cell,
-                                                                              output_keep_prob=(1.0 - self.dropout))
+            cells = []
+            for _ in range(self.num_layers):
+                cell = tf.nn.rnn_cell.LSTMCell(num_units=self.hidden_units)
+                if self.dropout is not None:
+                    cell = tf.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob=1.0 - self.dropout)
+                cells.append(cell)
+
+            self.encoder_multi_layer_cell = tf.nn.rnn_cell.MultiRNNCell(cells)
 
     def forward(self, embedding):
         encoder_inputs_embedded = tf.nn.embedding_lookup(embedding, self.encoder_inputs)
