@@ -18,16 +18,17 @@ class Encoder:
             self.encoder_sequence_lens = tf.placeholder(tf.int32, shape=(None,), name='sequence_lengths')
 
             cell = tf.nn.rnn_cell.LSTMCell(num_units=self.hidden_units)
-            if self.dropout is not None:
-                cell = tf.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob=(1.0 - self.dropout))
             self.encoder_multi_layer_cell = tf.nn.rnn_cell.MultiRNNCell([cell] * self.num_layers)
+            if self.dropout is not None:
+                self.encoder_multi_layer_cell = tf.nn.rnn_cell.DropoutWrapper(self.encoder_multi_layer_cell,
+                                                                              output_keep_prob=(1.0 - self.dropout))
 
-    def forward(self, embedding, time_major=False):
+    def forward(self, embedding):
         encoder_inputs_embedded = tf.nn.embedding_lookup(embedding, self.encoder_inputs)
         encoder_outputs, encoder_final_states = tf.nn.dynamic_rnn(cell=self.encoder_multi_layer_cell,
                                                                   inputs=encoder_inputs_embedded,
                                                                   sequence_length=self.encoder_sequence_lens,
-                                                                  time_major=time_major,
+                                                                  time_major=False,
                                                                   dtype=tf.float32)
 
         return encoder_outputs, encoder_final_states
