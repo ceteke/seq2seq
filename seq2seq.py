@@ -2,8 +2,8 @@ import tensorflow as tf
 import os
 import sys
 sys.path.append(os.getcwd()) # Import from current path
-from encoder import Encoder
-from decoder import Decoder
+from .encoder import Encoder
+from .decoder import Decoder
 
 class Seq2Seq:
     def __init__(self, sess, hidden_units, vocab_size, num_layers, embedding_size, mode='train', learning_rate=0.001,
