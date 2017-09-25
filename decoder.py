@@ -21,8 +21,7 @@ class Decoder:
 
             self.cell = tf.nn.rnn_cell.LSTMCell(num_units=self.hidden_units)
             if self.dropout is not None and self.mode=='train':
-                self.cell = tf.nn.rnn_cell.DropoutWrapper(self.cell, input_keep_prob=(1.0 - self.dropout),
-                                                              output_keep_prob=(1.0 - self.dropout))
+                self.cell = tf.nn.rnn_cell.DropoutWrapper(self.cell, output_keep_prob=(1.0 - self.dropout))
 
             self.decoder_cell = tf.nn.rnn_cell.MultiRNNCell([self.cell] * self.num_layers)
             self.decoder_output_layer = Dense(self.vocab_size, name='output_projection')

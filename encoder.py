@@ -19,8 +19,7 @@ class Encoder:
 
             cell = tf.nn.rnn_cell.LSTMCell(num_units=self.hidden_units)
             if self.dropout is not None:
-                cell = tf.nn.rnn_cell.DropoutWrapper(cell, input_keep_prob=(1.0 - self.dropout),
-                                                     output_keep_prob=(1.0 - self.dropout))
+                cell = tf.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob=(1.0 - self.dropout))
             self.encoder_multi_layer_cell = tf.nn.rnn_cell.MultiRNNCell([cell] * self.num_layers)
 
     def forward(self, embedding, time_major=False):
