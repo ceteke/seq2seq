@@ -13,7 +13,7 @@ If you have GPU, please see Tensorflow GPU installation.
 #### How to use?
 ```python
 import tensorflow as tf
-from seq2seq import Seq2Seq
+from model.seq2seq import Seq2Seq
  
 sess = tf.Session()
 s2s = Seq2Seq(sess=sess,hidden_units=1024, vocab_size=20, num_layers=1, embedding_size=200)
