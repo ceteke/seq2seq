@@ -2,9 +2,8 @@ from model.seq2seq import Seq2Seq
 import tensorflow as tf
 
 sess = tf.Session()
-# python3 -u  train_s2s.py -e 100 -i 100 -u 1024 -g 1.0 -n 2 -em 500 -l 0.0002 -d 0.3 -b 32 -o output/ -s 2000
-# python3 -u  train_s2s.py -e 100 -i 100 -u 128 -n 2 -em 200 -l 0.01 -d 0.5 -b 32 -o output/ -s 2000 > log.txt &
-s2s = Seq2Seq(sess=sess,hidden_units=1024, vocab_size=50003, num_layers=1, embedding_size=300, mode='inference', max_decode_len=20)
-s2s.restore('/Users/cem/Desktop/output/seq2seq')
+# python3 -u  train_s2s.py -e 10 -i 100 -u 512 -g 5.0 -n 2 -em 500 -l 1.0 -d 0.3 -b 32 -o output/ -s 2000
+s2s = Seq2Seq(sess=sess,hidden_units=1024, vocab_size=50003, num_layers=1, embedding_size=300, mode='train', max_decode_len=20, gradient_clip=5.0)
+#s2s.restore('/Users/cem/Desktop/output/seq2seq')
 
 

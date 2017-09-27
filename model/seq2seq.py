@@ -55,16 +55,15 @@ class Seq2Seq:
             self.predict_op = model_out
 
     def init_optimizer(self, loss):
-        print("Building ADAM Optimizer:\n\tlearning rate: {}\n\tgradient clip: {}".format(self.learning_rate,
+        print("Building SGD Optimizer:\n\tlearning rate: {}\n\tgradient clip: {}".format(self.learning_rate,
                                                                                               self.gradient_clip),
               flush=True)
 
-        self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
+        self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate)
         if self.gradient_clip is not None:
-            trainable_variables = tf.trainable_variables()
-            gradients = tf.gradients(loss, trainable_variables)
-            clip_gradients, _ = tf.clip_by_global_norm(gradients, self.gradient_clip)
-            train_op = self.optimizer.apply_gradients(zip(clip_gradients, trainable_variables), global_step=self.global_step)
+            gradients = self.optimizer.compute_gradients(loss)
+            clip_gradients = [(tf.clip_by_norm(g, self.gradient_clip), var) for g, var in gradients]
+            train_op = self.optimizer.apply_gradients(clip_gradients, global_step=self.global_step)
         else:
             train_op = self.optimizer.minimize(loss, global_step=self.global_step)
 
