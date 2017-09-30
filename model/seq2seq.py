@@ -4,6 +4,7 @@ import sys
 sys.path.append(os.getcwd()) # Import from current path
 from .encoder import BasicEncoder
 from .decoder import TrainingDecoder, InferenceDecoder
+from .tf_utils import get_initializer
 
 class Seq2Seq:
     def __init__(self, sess, hidden_units, vocab_sizes, embedding_sizes, num_layers, tensorboard_id, cell_type='LSTM',
@@ -48,7 +49,7 @@ class Seq2Seq:
             vocab_size = self.vocab_sizes[0]
             embedding_size = self.embedding_sizes[0]
 
-            with tf.variable_scope(self.variable_scope):
+            with tf.variable_scope(self.variable_scope, initializer=get_initializer(tf.float32)):
                 embedding = tf.get_variable(name='embedding', shape=[vocab_size, embedding_size],
                                                  dtype=tf.float32)
 

@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.python.layers.core import Dense
 import abc
-from .tf_utils import get_multi_layer_rnn, get_multi_layer_rnn_attn
+from .tf_utils import get_multi_layer_rnn, get_multi_layer_rnn_attn, get_initializer
 
 class BaseDecoder(object):
     def __init__(self, cell_type, hidden_units, num_layers, vocab_size, embedding_size, embedding, eos_token):
@@ -17,7 +17,7 @@ class BaseDecoder(object):
         if self.embedding is not None:
             self.embedding = embedding
         else:
-            with tf.variable_scope(self.variable_scope):
+            with tf.variable_scope(self.variable_scope, initializer=get_initializer(tf.float32)):
                 self.embedding = tf.get_variable(name='embedding', shape=[self.vocab_size, self.embedding_size],
                                                  dtype=tf.float32)
 
@@ -39,7 +39,7 @@ class TrainingDecoder(BaseDecoder):
         self.init_variables()
 
     def init_variables(self):
-        with tf.variable_scope(self.variable_scope):
+        with tf.variable_scope(self.variable_scope, initializer=get_initializer(tf.float32)):
             self.decoder_sequence_lens = tf.placeholder(tf.int32, shape=(None,), name='sequence_lengths')
             self.decoder_inputs = tf.placeholder(tf.int32, shape=(None, None), name='input_sequences')
 
@@ -50,7 +50,7 @@ class TrainingDecoder(BaseDecoder):
 
     def forward(self, encoder_outputs, encoder_states, encoder_sequence_lens):
         batch_size = tf.shape(encoder_states[0][0])[0]
-        with tf.variable_scope(self.variable_scope):
+        with tf.variable_scope(self.variable_scope, initializer=get_initializer(tf.float32)):
             if self.attn is not None:
                 self.decoder_multi_layer_cell, decoder_initial_state = get_multi_layer_rnn_attn(self.cell_type, batch_size, self.hidden_units,
                                                                                                 self.num_layers, encoder_outputs, encoder_states,
@@ -107,13 +107,13 @@ class InferenceDecoder(BaseDecoder):
         self.init_variables()
 
     def init_variables(self):
-        with tf.variable_scope(self.variable_scope):
+        with tf.variable_scope(self.variable_scope, initializer=get_initializer(tf.float32)):
             if self.attn is None:
                 self.decoder_multi_layer_cell = get_multi_layer_rnn(self.cell_type, self.hidden_units, self.num_layers)
             self.decoder_output_layer = Dense(self.vocab_size, name='output_projection')
 
     def forward(self, encoder_outputs, encoder_states, encoder_sequence_lens):
-        with tf.variable_scope(self.variable_scope):
+        with tf.variable_scope(self.variable_scope, initializer=get_initializer(tf.float32)):
             batch_size = tf.shape(encoder_states[0][0])[0]
             if self.attn is not None:
                 self.decoder_multi_layer_cell = get_multi_layer_rnn_attn(self.cell_type, batch_size, self.hidden_units,

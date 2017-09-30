@@ -1,5 +1,8 @@
 import tensorflow as tf
 
+def get_initializer(dtype):
+    return tf.random_uniform_initializer(-0.1, 0.1, dtype=dtype)
+
 def get_cells(cell_type, hidden_units, num_layers, dropout):
     cells = []
     for _ in range(num_layers):

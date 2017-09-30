@@ -1,5 +1,5 @@
 import tensorflow as tf
-from .tf_utils import get_multi_layer_rnn
+from .tf_utils import get_multi_layer_rnn, get_initializer
 import abc
 import logging
 
@@ -16,7 +16,7 @@ class BaseEncoder(object):
         if self.embedding is not None:
             self.embedding = embedding
         else:
-            with tf.variable_scope(self.variable_scope):
+            with tf.variable_scope(self.variable_scope, initializer=get_initializer(tf.float32)):
                 self.embedding = tf.get_variable(name='embedding', shape=[self.vocab_size, self.embedding_size],
                                                  dtype=tf.float32)
 
@@ -41,11 +41,11 @@ class BasicEncoder(BaseEncoder):
         self.init_variables()
 
     def init_variables(self):
-        with tf.variable_scope(self.variable_scope):
+        with tf.variable_scope(self.variable_scope, initializer=get_initializer(tf.float32)):
             self.encoder_multi_layer_cell = get_multi_layer_rnn(self.cell_type, self.hidden_units, self.num_layers, self.dropout)
 
     def forward(self):
-        with tf.variable_scope(self.variable_scope):
+        with tf.variable_scope(self.variable_scope, initializer=get_initializer(tf.float32)):
             encoder_inputs_embedded = tf.nn.embedding_lookup(self.embedding, self.encoder_inputs)
             encoder_outputs, encoder_final_states = tf.nn.dynamic_rnn(cell=self.encoder_multi_layer_cell,
                                                                       inputs=encoder_inputs_embedded,
