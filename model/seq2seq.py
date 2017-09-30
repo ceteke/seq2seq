@@ -95,7 +95,7 @@ class Seq2Seq:
             tf.summary.scalar('loss', self.loss)
             self.train_op = self.init_optimizer(self.loss)
             self.merged = tf.summary.merge_all()
-            self.train_writer = tf.summary.FileWriter('/tensorboard', self.sess.graph)
+            self.train_writer = tf.summary.FileWriter('tensorboard', self.sess.graph)
         elif self.mode == 'inference':
             self.predict_op = model_out
 
