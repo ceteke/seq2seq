@@ -6,8 +6,8 @@ from .encoder import BasicEncoder
 from .decoder import TrainingDecoder, InferenceDecoder
 
 class Seq2Seq:
-    def __init__(self, sess, hidden_units, vocab_sizes, embedding_sizes, num_layers, cell_type='LSTM', attn=None,
-                 mode='train', learning_rate=0.001, dropout=None, gradient_clip=None, max_decode_len=None):
+    def __init__(self, sess, hidden_units, vocab_sizes, embedding_sizes, num_layers, tensorboard_id, cell_type='LSTM',
+                 attn=None, mode='train', learning_rate=0.001, dropout=None, gradient_clip=None, max_decode_len=None):
         '''
         :param sess: Tensoflow session
         :param hidden_units: Hidden units
@@ -39,6 +39,7 @@ class Seq2Seq:
         self.cell_type = cell_type
         self.variable_scope = 'seq2seq'
         self.attn = attn
+        self.tensorboard_id = tensorboard_id
 
         assert (len(vocab_sizes) == len(embedding_sizes)), "Vocab sizes and embedding sizes length must be equal"
         assert (self.mode in ['inference', 'train']), "mode can be either 'inference' or 'train'"
@@ -95,7 +96,7 @@ class Seq2Seq:
             tf.summary.scalar('loss', self.loss)
             self.train_op = self.init_optimizer(self.loss)
             self.merged = tf.summary.merge_all()
-            self.train_writer = tf.summary.FileWriter('tensorboard1', self.sess.graph)
+            self.train_writer = tf.summary.FileWriter('tensorboard/{}'.format(self.tensorboard_id), self.sess.graph)
         elif self.mode == 'inference':
             self.predict_op = model_out
 
@@ -107,7 +108,7 @@ class Seq2Seq:
         self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
         if self.gradient_clip is not None:
             gradients = self.optimizer.compute_gradients(loss)
-            clip_gradients = [(tf.clip_by_norm(g, self.gradient_clip), var) for g, var in gradients]
+            clip_gradients = [(tf.clip_by_global_norm(g, self.gradient_clip), var) for g, var in gradients]
             train_op = self.optimizer.apply_gradients(clip_gradients, global_step=self.global_step)
         else:
             train_op = self.optimizer.minimize(loss, global_step=self.global_step)
