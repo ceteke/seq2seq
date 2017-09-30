@@ -92,7 +92,10 @@ class Seq2Seq:
                                          encoder_sequence_lens=self.encoder.encoder_sequence_lens)
         if self.mode == 'train':
             self.loss = model_out
+            tf.summary.scalar('loss', self.loss)
             self.train_op = self.init_optimizer(self.loss)
+            self.merged = tf.summary.merge_all()
+            self.train_writer = tf.summary.FileWriter('/tensorboard', self.sess.graph)
         elif self.mode == 'inference':
             self.predict_op = model_out
 
@@ -126,10 +129,11 @@ class Seq2Seq:
 
     def train(self, encoder_inputs, encoder_inputs_lens, decoder_inputs, decoder_inputs_lens):
         assert (self.mode == 'train'), "Can only train in 'train' mode"
-        outputs = self.sess.run([self.train_op, self.loss, self.global_step], feed_dict={self.encoder.encoder_inputs.name: encoder_inputs,
+        outputs = self.sess.run([self.train_op, self.loss, self.global_step, self.merged], feed_dict={self.encoder.encoder_inputs.name: encoder_inputs,
                                                                                         self.encoder.encoder_sequence_lens.name: encoder_inputs_lens,
                                                                                         self.decoder.decoder_inputs.name: decoder_inputs,
                                                                                         self.decoder.decoder_sequence_lens.name: decoder_inputs_lens})
+        self.train_writer.add_summary(outputs[3], outputs[2])
         return outputs[1], outputs[2]
 
     def evaluate(self, encoder_inputs, encoder_inputs_lens, decoder_inputs, decoder_inputs_lens):
