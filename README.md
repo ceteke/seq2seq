@@ -16,12 +16,17 @@ import tensorflow as tf
 from model.seq2seq import Seq2Seq
  
 sess = tf.Session()
-s2s = Seq2Seq(sess=sess,hidden_units=1024, vocab_size=20, num_layers=1, embedding_size=200)
+s2s = Seq2Seq(sess=sess,hidden_units=1024, vocab_sizes=[2000,3000], num_layers=1, embedding_sizes=[200, 300])
  
 ...
  
-loss = s2s.train(encoder_inputs, encoder_input_lens, decoder_inputs, decoder_inputs_lens)
+loss, global_step = s2s.train(encoder_inputs, encoder_input_lens, decoder_inputs, decoder_inputs_lens)
 ```
+
+* If ```vocab_sizes``` and ```embedding_sizes``` parameters has length of 1, encoder and decoder uses same
+embedding matrix. If it has length of 2 encoder uses ```vocab_sizes[0]```, ```embedding_sizes[0]``` and decoder
+uses ```vocab_sizes[1]```, ```embedding_sizes[1]```.
+* Same ```dropout``` is applied to each layer of encoder and decoder.
 
 ```encoder_inputs: [batch_size, encoder_seq_len]```  
 ```encoder_input_lens: [batch_size]```  
@@ -31,7 +36,6 @@ loss = s2s.train(encoder_inputs, encoder_input_lens, decoder_inputs, decoder_inp
 
 ### TODO
 - Attention
-- Different embedding matrices for encoder and decoder
 - Bidirectional encoder
 - Beam search
 

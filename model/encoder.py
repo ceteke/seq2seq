@@ -1,33 +1,51 @@
 import tensorflow as tf
+from .tf_utils import get_multi_layer_rnn
+import abc
+import logging
 
-class Encoder:
-    def __init__(self, hidden_units, num_layers, dropout):
+class BaseEncoder(object):
+    def __init__(self, cell_type, hidden_units, num_layers, vocab_size, embedding_size, embedding):
         self.hidden_units = hidden_units
         self.num_layers = num_layers
+        self.cell_type = cell_type
+        self.variable_scope = 'encoder'
+        self.vocab_size = vocab_size
+        self.embedding_size = embedding_size
+        self.embedding = embedding
+
+        if self.embedding is not None:
+            self.embedding = embedding
+        else:
+            with tf.variable_scope(self.variable_scope):
+                self.embedding = tf.get_variable(name='embedding', shape=[self.vocab_size, self.embedding_size],
+                                                 dtype=tf.float32)
+
+        with tf.variable_scope(self.variable_scope):
+            self.encoder_inputs = tf.placeholder(tf.int32, shape=(None, None), name='input_sequences')
+            self.encoder_sequence_lens = tf.placeholder(tf.int32, shape=(None,), name='sequence_lengths')
+
+
+    @abc.abstractmethod
+    def init_variables(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def forward(self):
+        raise NotImplementedError
+
+class BasicEncoder(BaseEncoder):
+    def __init__(self, cell_type, hidden_units, num_layers, dropout, embedding, vocab_size=None, embedding_size=None):
+        super().__init__(cell_type, hidden_units, num_layers, vocab_size, embedding_size, embedding)
         self.dropout = dropout
 
         self.init_variables()
 
     def init_variables(self):
-        '''
-        Initializes LSTM layers of the encoder. Initial paramters are uniformly initialized between -0.1 and 0.1
-        :return: None
-        '''
-        with tf.variable_scope("encoder", initializer=tf.random_uniform_initializer(-0.1, 0.1)):
-            self.encoder_inputs = tf.placeholder(tf.int32, shape=(None, None), name='input_sequences')
-            self.encoder_sequence_lens = tf.placeholder(tf.int32, shape=(None,), name='sequence_lengths')
+        with tf.variable_scope(self.variable_scope):
+            self.encoder_multi_layer_cell = get_multi_layer_rnn(self.cell_type, self.hidden_units, self.num_layers, self.dropout)
 
-            cells = []
-            for _ in range(self.num_layers):
-                cell = tf.nn.rnn_cell.LSTMCell(num_units=self.hidden_units)
-                if self.dropout is not None:
-                    cell = tf.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob=1.0 - self.dropout)
-                cells.append(cell)
-
-            self.encoder_multi_layer_cell = tf.nn.rnn_cell.MultiRNNCell(cells)
-
-    def forward(self, embedding):
-        encoder_inputs_embedded = tf.nn.embedding_lookup(embedding, self.encoder_inputs)
+    def forward(self):
+        encoder_inputs_embedded = tf.nn.embedding_lookup(self.embedding, self.encoder_inputs)
         encoder_outputs, encoder_final_states = tf.nn.dynamic_rnn(cell=self.encoder_multi_layer_cell,
                                                                   inputs=encoder_inputs_embedded,
                                                                   sequence_length=self.encoder_sequence_lens,
