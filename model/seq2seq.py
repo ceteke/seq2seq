@@ -6,8 +6,8 @@ from .encoder import BasicEncoder
 from .decoder import TrainingDecoder, InferenceDecoder
 
 class Seq2Seq:
-    def __init__(self, sess, hidden_units, vocab_sizes, embedding_sizes, num_layers, cell_type='LSTM', mode='train',
-                 learning_rate=0.001, dropout=None, gradient_clip=None, max_decode_len=None):
+    def __init__(self, sess, hidden_units, vocab_sizes, embedding_sizes, num_layers, cell_type='LSTM', attn=None,
+                 mode='train', learning_rate=0.001, dropout=None, gradient_clip=None, max_decode_len=None):
         '''
         :param sess: Tensoflow session
         :param hidden_units: Hidden units
@@ -16,6 +16,7 @@ class Seq2Seq:
         :param embedding_sizes:
         :param num_layers:
         :param cell_type:
+        :param attn: Attention type. Can be 'bahdanau' or 'luong'
         :param mode: Can be 'train' or 'inference'. Dropouts and decoder is adjusted accordingly
         :param learning_rate: Learning rate
         :param dropout: Dropout between layers. This is applied to outputs of layers and the same dropout applied in encoder and decoder
@@ -37,6 +38,7 @@ class Seq2Seq:
         self.max_decode_len = max_decode_len
         self.cell_type = cell_type
         self.variable_scope = 'seq2seq'
+        self.attn = attn
 
         assert (len(vocab_sizes) == len(embedding_sizes)), "Vocab sizes and embedding sizes length must be equal"
         assert (self.mode in ['inference', 'train']), "mode can be either 'inference' or 'train'"
@@ -51,10 +53,12 @@ class Seq2Seq:
 
             if mode == 'train':
                 self.encoder = BasicEncoder(self.cell_type, self.hidden_units, self.num_layers, self.dropout, embedding)
-                self.decoder = TrainingDecoder(self.cell_type, self.hidden_units, self.num_layers, self.dropout, vocab_size, embedding)
+                self.decoder = TrainingDecoder(self.cell_type, self.hidden_units, self.num_layers, self.dropout, vocab_size,
+                                               embedding, attn=self.attn)
             else:
                 self.encoder = BasicEncoder(self.cell_type, self.hidden_units, self.num_layers, None, embedding)
-                self.decoder = InferenceDecoder(self.cell_type, self.hidden_units, self.num_layers, self.max_decode_len, vocab_size, embedding)
+                self.decoder = InferenceDecoder(self.cell_type, self.hidden_units, self.num_layers, self.max_decode_len,
+                                                vocab_size, embedding, attn=self.attn)
 
         else:
             enc_vocab_size = self.vocab_sizes[0]
@@ -66,12 +70,12 @@ class Seq2Seq:
                 self.encoder = BasicEncoder(self.cell_type, self.hidden_units, self.num_layers, self.dropout, None,
                                             enc_vocab_size, enc_embedding_size)
                 self.decoder = TrainingDecoder(self.cell_type, self.hidden_units, self.num_layers, self.dropout,
-                                               dec_vocab_size, None, dec_embedding_size)
+                                               dec_vocab_size, None, dec_embedding_size, attn=self.attn)
             elif self.mode == 'inference':
                 self.encoder = BasicEncoder(self.cell_type, self.hidden_units, self.num_layers, None, None,
                                             enc_vocab_size, enc_embedding_size)
                 self.decoder = InferenceDecoder(self.cell_type, self.hidden_units, self.num_layers, self.max_decode_len,
-                                                dec_vocab_size, None, dec_embedding_size)
+                                                dec_vocab_size, None, dec_embedding_size, attn=self.attn)
 
         self.init_variables()
         self.build_graph()
@@ -84,7 +88,7 @@ class Seq2Seq:
     def build_graph(self):
         encoder_output, encoder_state = self.encoder.forward()
         # Decoder outputs loss if training, ids if prediction
-        model_out = self.decoder.forward(encoder_states=encoder_state,
+        model_out = self.decoder.forward(encoder_outputs=encoder_output,encoder_states=encoder_state,
                                          encoder_sequence_lens=self.encoder.encoder_sequence_lens)
         if self.mode == 'train':
             self.loss = model_out

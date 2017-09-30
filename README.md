@@ -27,6 +27,7 @@ loss, global_step = s2s.train(encoder_inputs, encoder_input_lens, decoder_inputs
 embedding matrix. If it has length of 2 encoder uses ```vocab_sizes[0]```, ```embedding_sizes[0]``` and decoder
 uses ```vocab_sizes[1]```, ```embedding_sizes[1]```.
 * Same ```dropout``` is applied to each layer of encoder and decoder.
+* ```attn``` argument can be 'luong' or 'bahdanau'
 
 ```encoder_inputs: [batch_size, encoder_seq_len]```  
 ```encoder_input_lens: [batch_size]```  
@@ -35,7 +36,6 @@ uses ```vocab_sizes[1]```, ```embedding_sizes[1]```.
 ```loss:``` Perplexity
 
 ### TODO
-- Attention
 - Bidirectional encoder
 - Beam search
 

@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.python.layers.core import Dense
 import abc
-from .tf_utils import get_multi_layer_rnn
+from .tf_utils import get_multi_layer_rnn, get_multi_layer_rnn_attn
 
 class BaseDecoder(object):
     def __init__(self, cell_type, hidden_units, num_layers, vocab_size, embedding_size, embedding, eos_token):
@@ -22,7 +22,7 @@ class BaseDecoder(object):
                                                  dtype=tf.float32)
 
     @abc.abstractmethod
-    def forward(self, encoder_states, encoder_sequence_lens):
+    def forward(self, encoder_outputs, encoder_states, encoder_sequence_lens):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -31,9 +31,11 @@ class BaseDecoder(object):
 
 
 class TrainingDecoder(BaseDecoder):
-    def __init__(self, cell_type, hidden_units, num_layers, dropout, vocab_size, embedding, embedding_size=None, eos_token=1):
+    def __init__(self, cell_type, hidden_units, num_layers, dropout, vocab_size, embedding, embedding_size=None,
+                 eos_token=1, attn=None):
         super().__init__(cell_type, hidden_units, num_layers, vocab_size, embedding_size, embedding, eos_token)
         self.dropout = dropout
+        self.attn = attn
         self.init_variables()
 
     def init_variables(self):
@@ -41,12 +43,22 @@ class TrainingDecoder(BaseDecoder):
             self.decoder_sequence_lens = tf.placeholder(tf.int32, shape=(None,), name='sequence_lengths')
             self.decoder_inputs = tf.placeholder(tf.int32, shape=(None, None), name='input_sequences')
 
-            self.decoder_multi_layer_cell = get_multi_layer_rnn(self.cell_type, self.hidden_units, self.num_layers, self.dropout)
+            if self.attn is None:
+                self.decoder_multi_layer_cell = get_multi_layer_rnn(self.cell_type, self.hidden_units, self.num_layers,
+                                                                    self.dropout)
             self.decoder_output_layer = Dense(self.vocab_size, name='output_projection')
 
-    def forward(self, encoder_states, encoder_sequence_lens):
+    def forward(self, encoder_outputs, encoder_states, encoder_sequence_lens):
         batch_size = tf.shape(encoder_states[0][0])[0]
         with tf.variable_scope(self.variable_scope):
+            if self.attn is not None:
+                self.decoder_multi_layer_cell, decoder_initial_state = get_multi_layer_rnn_attn(self.cell_type, batch_size, self.hidden_units,
+                                                                                                self.num_layers, encoder_outputs, encoder_states,
+                                                                                                encoder_sequence_lens, dropout=self.dropout,
+                                                                                                attn=self.attn)
+            else:
+                decoder_initial_state = encoder_states
+
             eos_step = tf.ones(shape=[batch_size, 1], dtype=tf.int32) * self.eos_token
 
             decoder_train_inputs = tf.concat([eos_step, self.decoder_inputs], axis=1)
@@ -62,7 +74,7 @@ class TrainingDecoder(BaseDecoder):
 
             basic_train_decoder = tf.contrib.seq2seq.BasicDecoder(cell=self.decoder_multi_layer_cell,
                                                                   helper=training_helper,
-                                                                  initial_state=encoder_states,
+                                                                  initial_state=decoder_initial_state,
                                                                   output_layer=self.decoder_output_layer)
 
             max_len = tf.reduce_max(decoder_sequence_lens_train)
@@ -87,20 +99,27 @@ class TrainingDecoder(BaseDecoder):
 class InferenceDecoder(BaseDecoder):
     # TODO: Beam search
     def __init__(self, cell_type, hidden_units, num_layers, max_decode_len, vocab_size, embedding, embedding_size=None,
-                 eos_token=1, beam_size=None):
+                 eos_token=1, beam_size=None, attn=None):
         super().__init__(cell_type, hidden_units, num_layers, vocab_size, embedding_size, embedding, eos_token)
         self.beam_size = beam_size
         self.max_decode_len = max_decode_len
+        self.attn = attn
         self.init_variables()
 
     def init_variables(self):
         with tf.variable_scope(self.variable_scope):
-            self.decoder_multi_layer_cell = get_multi_layer_rnn(self.cell_type, self.hidden_units, self.num_layers)
+            if self.attn is None:
+                self.decoder_multi_layer_cell = get_multi_layer_rnn(self.cell_type, self.hidden_units, self.num_layers)
             self.decoder_output_layer = Dense(self.vocab_size, name='output_projection')
 
-    def forward(self, encoder_states, encoder_sequence_lens):
+    def forward(self, encoder_outputs, encoder_states, encoder_sequence_lens):
         with tf.variable_scope(self.variable_scope):
             batch_size = tf.shape(encoder_states[0][0])[0]
+            if self.attn is not None:
+                self.decoder_multi_layer_cell = get_multi_layer_rnn_attn(self.cell_type, batch_size, self.hidden_units,
+                                                                         self.num_layers, encoder_outputs, encoder_states,
+                                                                         encoder_sequence_lens, attn=self.attn)
+
             start_step = tf.ones([batch_size, ], dtype=tf.int32) * self.eos_token
             inference_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
                 embedding=lambda idx: tf.nn.embedding_lookup(self.embedding, idx),
