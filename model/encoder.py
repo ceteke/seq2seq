@@ -45,11 +45,12 @@ class BasicEncoder(BaseEncoder):
             self.encoder_multi_layer_cell = get_multi_layer_rnn(self.cell_type, self.hidden_units, self.num_layers, self.dropout)
 
     def forward(self):
-        encoder_inputs_embedded = tf.nn.embedding_lookup(self.embedding, self.encoder_inputs)
-        encoder_outputs, encoder_final_states = tf.nn.dynamic_rnn(cell=self.encoder_multi_layer_cell,
-                                                                  inputs=encoder_inputs_embedded,
-                                                                  sequence_length=self.encoder_sequence_lens,
-                                                                  time_major=False,
-                                                                  dtype=tf.float32)
+        with tf.variable_scope(self.variable_scope):
+            encoder_inputs_embedded = tf.nn.embedding_lookup(self.embedding, self.encoder_inputs)
+            encoder_outputs, encoder_final_states = tf.nn.dynamic_rnn(cell=self.encoder_multi_layer_cell,
+                                                                      inputs=encoder_inputs_embedded,
+                                                                      sequence_length=self.encoder_sequence_lens,
+                                                                      time_major=False,
+                                                                      dtype=tf.float32)
 
-        return encoder_outputs, encoder_final_states
+            return encoder_outputs, encoder_final_states

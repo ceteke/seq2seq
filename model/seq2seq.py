@@ -107,9 +107,10 @@ class Seq2Seq:
 
         self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
         if self.gradient_clip is not None:
-            gradients = self.optimizer.compute_gradients(loss)
-            clip_gradients = [(tf.clip_by_global_norm(g, self.gradient_clip), var) for g, var in gradients]
-            train_op = self.optimizer.apply_gradients(clip_gradients, global_step=self.global_step)
+            trainable_params = tf.trainable_variables()
+            gradients = tf.gradients(loss, trainable_params)
+            clip_gradients, _ = tf.clip_by_global_norm(gradients, self.gradient_clip)
+            train_op = self.optimizer.apply_gradients(zip(clip_gradients, trainable_params), global_step=self.global_step)
         else:
             train_op = self.optimizer.minimize(loss, global_step=self.global_step)
 
