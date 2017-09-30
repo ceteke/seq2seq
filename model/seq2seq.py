@@ -95,7 +95,7 @@ class Seq2Seq:
             tf.summary.scalar('loss', self.loss)
             self.train_op = self.init_optimizer(self.loss)
             self.merged = tf.summary.merge_all()
-            self.train_writer = tf.summary.FileWriter('tensorboard', self.sess.graph)
+            self.train_writer = tf.summary.FileWriter('tensorboard1', self.sess.graph)
         elif self.mode == 'inference':
             self.predict_op = model_out
 
@@ -104,7 +104,7 @@ class Seq2Seq:
                                                                                               self.gradient_clip),
               flush=True)
 
-        self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate)
+        self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
         if self.gradient_clip is not None:
             gradients = self.optimizer.compute_gradients(loss)
             clip_gradients = [(tf.clip_by_norm(g, self.gradient_clip), var) for g, var in gradients]
