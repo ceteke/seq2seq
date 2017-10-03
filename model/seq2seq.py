@@ -7,7 +7,7 @@ from .decoder import TrainingDecoder, InferenceDecoder
 from .tf_utils import get_initializer
 
 class Seq2Seq:
-    def __init__(self, sess, hidden_units, vocab_sizes, embedding_sizes, num_layers, tensorboard_id, cell_type='LSTM',
+    def __init__(self, sess, hidden_units, vocab_sizes, embedding_sizes, num_layers, tensorboard_id=None, cell_type='LSTM',
                  attn=None, mode='train', learning_rate=0.001, dropout=None, gradient_clip=None, max_decode_len=None):
         '''
         :param sess: Tensoflow session
