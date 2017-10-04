@@ -84,7 +84,7 @@ class Seq2Seq:
         self.sess.run(tf.global_variables_initializer())
 
     def init_variables(self):
-        with tf.variable_scope('seq2seq', initializer=tf.random_uniform_initializer(-0.1, 0.1)):
+        with tf.variable_scope('seq2seq'):
             self.global_step = tf.Variable(0, trainable=False)
 
     def build_graph(self):
